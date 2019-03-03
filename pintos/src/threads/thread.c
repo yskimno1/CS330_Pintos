@@ -362,7 +362,7 @@ thread_wakeup (int64_t ticks)
     else e=list_next(e); // point next element
   }
   if(list_size(&sleep_list) == 0){
-    update_wakeup_call_time(INT64_MAX);
+    update_wakeup_call_time(INT64_MAX); // yunseong
   }
 }
 
