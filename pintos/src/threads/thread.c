@@ -19,7 +19,7 @@
 /* Random value for struct thread's `magic' member.
    Used to detect stack overflow.  See the big comment at the top
    of thread.h for details. */
-#define THREAD_MAGIC 0xcd6abf4b
+#define THREAD_MAGIC 0xcd6abf4b // something
 
 /* Random value for basic thread
    Do not modify this value. */
