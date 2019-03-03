@@ -75,6 +75,8 @@ static void schedule (void);
 void schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 
+static int64_t wakeup_call_time = INT64_MAX;
+
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
    general and it is possible in this case only because loader.S
@@ -319,6 +321,20 @@ thread_yield (void)
 }
 
 void
+update_wakeup_call_time (int64_t wakeup_time)
+{
+  if(wakeup_time < wakeup_call_time) {
+    wakeup_call_time = wakeup_time;
+  }
+}
+
+int64_t
+get_wakeup_call_time ()
+{
+  return wakeup_call_time;
+}
+
+void
 thread_sleep (void)
 {
   struct thread *curr = thread_current ();
@@ -336,21 +352,17 @@ thread_sleep (void)
 void
 thread_wakeup (int64_t ticks)
 {
-  bool NEED_TO_BE_REMOVED=false;
-  struct list_elem* e;
-  for(e = list_begin(&sleep_list); e != list_end(&sleep_list); e=e->next){
+  struct list_elem* e = list_begin(&sleep_list);
+  while(e != list_end(&sleep_list)){
     struct thread* temp = list_entry(e, struct thread, elem);
-    if(NEED_TO_BE_REMOVED==true){
-      list_remove(&temp->elem);
-    }
     if(temp->wakeup_time <= ticks){
-      //list_remove(e);
-      NEED_TO_BE_REMOVED=true;
+      e = list_remove(&temp->elem); // point next element before remove
       thread_unblock(temp);
     }
-    else{
-      NEED_TO_BE_REMOVED=false;
-    }
+    else e=list_next(e); // point next element
+  }
+  if(list_size(&sleep_list) == 0){
+    update_wakeup_call_time(INT64_MAX);
   }
 }
 

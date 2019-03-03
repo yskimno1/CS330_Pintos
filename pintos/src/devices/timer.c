@@ -20,8 +20,6 @@
 /* Number of timer ticks since OS booted. */
 static int64_t ticks;
 
-static int64_t wakeup_call_time = INT64_MAX;
-
 /* Number of loops per timer tick.
    Initialized by timer_calibrate(). */
 static unsigned loops_per_tick;
@@ -94,14 +92,6 @@ timer_elapsed (int64_t then)
   return timer_ticks () - then;
 }
 
-void
-update_wakeup_call_time (int64_t wakeup_time)
-{
-  if(wakeup_time < wakeup_call_time) {
-    wakeup_call_time = wakeup_time;
-  }
-}
-
 /* Suspends execution for approximately TICKS timer ticks. */
 void
 timer_sleep (int64_t ticks) 
@@ -114,7 +104,6 @@ timer_sleep (int64_t ticks)
   update_wakeup_call_time(wakeup_time);
 
   thread_sleep();
-  
   //while (timer_elapsed (start) < ticks) 
   //  thread_yield ();
 }
@@ -154,7 +143,7 @@ timer_interrupt (struct intr_frame *args UNUSED)
   ticks++;
   thread_tick (); // not sure... yunseong
 
-  if(wakeup_call_time <= ticks){
+  if(get_wakeup_call_time() <= ticks){
     thread_wakeup(ticks);
   }
 }
