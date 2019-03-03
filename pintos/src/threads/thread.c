@@ -19,7 +19,7 @@
 /* Random value for struct thread's `magic' member.
    Used to detect stack overflow.  See the big comment at the top
    of thread.h for details. */
-#define THREAD_MAGIC 0xcd6abf4b // something
+#define THREAD_MAGIC 0xcd6abf4b
 
 /* Random value for basic thread
    Do not modify this value. */
@@ -28,6 +28,9 @@
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
 static struct list ready_list;
+
+/* List of processes which are sleeping */
+static struct list sleep_list;
 
 /* Idle thread. */
 static struct thread *idle_thread;
@@ -95,6 +98,7 @@ thread_init (void)
 
   lock_init (&tid_lock);
   list_init (&ready_list);
+  list_init (&sleep_list);
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
@@ -312,6 +316,49 @@ thread_yield (void)
   curr->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
+}
+
+void
+thread_sleep (void)
+{
+  struct thread *curr = thread_current ();
+  enum intr_level old_level;
+
+  ASSERT (!intr_context ());
+  old_level = intr_disable ();
+
+  ASSERT (curr == idle_thread);
+  list_push_back (&sleep_list, &curr->elem);
+  thread_block();
+  intr_set_level (old_level);
+}
+
+void
+thread_wakeup (int64_t ticks)
+{
+  bool NEED_TO_BE_REMOVED=false;
+  struct list_elem* e;
+  for(e = list_begin(&sleep_list); e != list_end(&sleep_list); e=e->next){
+    struct thread* temp = list_entry(e, struct thread, elem);
+    if(NEED_TO_BE_REMOVED==true){
+      list_remove(&temp->elem);
+    }
+    if(temp->wakeup_time <= ticks){
+      //list_remove(e);
+      NEED_TO_BE_REMOVED=true;
+      thread_unblock(temp);
+    }
+    else{
+      NEED_TO_BE_REMOVED=false;
+    }
+  }
+}
+
+/* Sets the current thread's wakeup time to wakeup_time. */
+void
+thread_set_wakeup_time (int64_t wakeup_time)
+{
+  thread_current ()->wakeup_time = wakeup_time;
 }
 
 /* Sets the current thread's priority to NEW_PRIORITY. */
