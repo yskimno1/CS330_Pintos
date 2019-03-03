@@ -98,7 +98,7 @@ timer_sleep (int64_t ticks)
 {
   int64_t start = timer_ticks ();
 
-  ASSERT (intr_get_level () == INTR_ON);
+  ASSERT (intr_get_level () == INTR_ON); // interrupt happened
   while (timer_elapsed (start) < ticks) 
     thread_yield ();
 }
