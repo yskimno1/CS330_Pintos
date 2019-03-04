@@ -343,7 +343,7 @@ thread_sleep (void)
   ASSERT (!intr_context ());
   old_level = intr_disable ();
 
-  ASSERT (curr == idle_thread);
+  //ASSERT (curr == idle_thread);
   list_push_back (&sleep_list, &curr->elem);
   thread_block();
   intr_set_level (old_level);
