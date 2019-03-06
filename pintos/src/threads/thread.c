@@ -338,7 +338,7 @@ get_wakeup_call_time ()
 bool
 compare_wakeup_time (struct list_elem* a, struct list_elem* b, void* aux)
 {
-  return (list_entry(a, struct thread, elem)->wakeup_time > list_entry(b, struct thread, elem)->wakeup_time);
+  return (list_entry(a, struct thread, elem)->wakeup_time < list_entry(b, struct thread, elem)->wakeup_time);
 }
 
 void
