@@ -367,7 +367,7 @@ thread_wakeup (int64_t ticks)
       e = list_remove(&temp->elem); // point next element before remove
       thread_unblock(temp);
     }
-    else e=list_next(e); // point next element
+    else break; // point next element
   }
   if(list_size(&sleep_list) == 0){
     update_wakeup_call_time(INT64_MAX); // yunseong
