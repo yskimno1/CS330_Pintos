@@ -338,7 +338,7 @@ get_wakeup_call_time ()
 bool
 compare_wakeup_time (struct list_elem* a, struct list_elem* b, void* aux)
 {
-  return (list_entry(a, struct thread, elem)->wakeup_time < list_entry(b, struct thread, elem)->wakeup_time);
+  return (list_entry(a, struct thread, elem)->wakeup_time > list_entry(b, struct thread, elem)->wakeup_time);
 }
 
 void
@@ -368,8 +368,9 @@ thread_wakeup (int64_t ticks)
       thread_unblock(temp);
     }
     else{
-      e=list_next(e);
-      update_wakeup_call_time(list_entry(e, struct thread, elem)->wakeup_time);
+      update_wakeup_call_time(temp->wakeup_time);
+      //e=list_next(e);
+      break;
     }
      // point next element
   }
