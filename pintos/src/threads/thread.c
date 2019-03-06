@@ -338,7 +338,7 @@ get_wakeup_call_time ()
 bool
 compare_wakeup_time (struct list_elem* a, struct list_elem* b, void* aux)
 {
-  return (list_entry(a, struct thread, elem)->wakeup_time > list_entry(b, struct thread, elem)->wakeup_time);
+  return (list_entry(a, struct thread, elem)->wakeup_time < list_entry(b, struct thread, elem)->wakeup_time);
 }
 
 void
@@ -363,12 +363,15 @@ thread_wakeup (int64_t ticks)
   struct list_elem* e = list_begin(&sleep_list);
   while(e != list_end(&sleep_list)){
     struct thread* temp = list_entry(e, struct thread, elem);
-    printf("wakeup time : %d, tick : %d\n", temp->wakeup_time, ticks);
     if(temp->wakeup_time <= ticks){
       e = list_remove(&temp->elem); // point next element before remove
       thread_unblock(temp);
     }
-    else break; // point next element
+    else{
+      e=list_next(e);
+      update_wakeup_call_time(list_entry(e, struct thread, elem)->wakeup_time);
+    }
+     // point next element
   }
   if(list_size(&sleep_list) == 0){
     update_wakeup_call_time(INT64_MAX); // yunseong
