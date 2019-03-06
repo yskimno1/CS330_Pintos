@@ -363,6 +363,7 @@ thread_wakeup (int64_t ticks)
   struct list_elem* e = list_begin(&sleep_list);
   while(e != list_end(&sleep_list)){
     struct thread* temp = list_entry(e, struct thread, elem);
+    printf("wakeup time : %d, tick : %d\n", temp->wakeup_time, ticks);
     if(temp->wakeup_time <= ticks){
       e = list_remove(&temp->elem); // point next element before remove
       thread_unblock(temp);
