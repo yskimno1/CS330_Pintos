@@ -334,6 +334,13 @@ get_wakeup_call_time ()
   return wakeup_call_time;
 }
 
+/* compare elem and e's wakeup_time */
+bool
+compare_wakeup_time (struct list_elem* a, struct list_elem* b, void* aux)
+{
+  return (list_entry(a, struct thread, elem)->wakeup_time > list_entry(b, struct thread, elem)->wakeup_time);
+}
+
 void
 thread_sleep (void)
 {
@@ -344,7 +351,8 @@ thread_sleep (void)
   old_level = intr_disable ();
 
   //ASSERT (curr == idle_thread);
-  list_push_back (&sleep_list, &curr->elem);
+  list_insert_ordered(&sleep_list, &curr->elem, compare_wakeup_time, 0);
+  //list_push_back (&sleep_list, &curr->elem);
   thread_block();
   intr_set_level (old_level);
 }
@@ -597,7 +605,7 @@ schedule (void)
   ASSERT (is_thread (next));
 
   if (curr != next)
-    prev = switch_threads (curr, next);
+    prev = switch_threads (curr, next); // have to block? yes! yunseong
   schedule_tail (prev); 
 }
 
