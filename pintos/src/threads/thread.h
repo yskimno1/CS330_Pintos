@@ -129,7 +129,7 @@ void thread_yield (void);
 void update_wakeup_call_time (int64_t);
 int64_t get_wakeup_call_time ();
 
-bool compare_wakeup_time(struct list_elem*, struct list_elem*, void* );
+bool compare_priority(struct list_elem*, struct list_elem*, void* );
 bool compare_wakeup_time(struct list_elem*, struct list_elem*, void* );
 void thread_sleep(void);
 void thread_wakeup(int64_t);
