@@ -201,7 +201,7 @@ lock_donate (struct lock *lock)
     /* no donation, just put into the sema->waiting list */
   }
   list_insert_ordered(&lock->semaphore.waiters, &curr->elem, compare_priority, 0);
-  thread_block();  
+  // thread_block();  
 }
 
 /* Acquires LOCK, sleeping until it becomes available if
