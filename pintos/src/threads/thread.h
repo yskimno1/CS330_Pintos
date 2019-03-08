@@ -92,6 +92,8 @@ struct thread
     int first_priority;
     int64_t wakeup_time;
     /* Shared between thread.c and synch.c. */
+    struct list lock_list;
+    struct list lock_waiting_list;
     struct list_elem elem;              /* List element. */
 
 #ifdef USERPROG
