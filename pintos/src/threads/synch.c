@@ -248,14 +248,20 @@ lock_re_donate (struct lock* lock)
 {
   struct list_elem* e;
   struct list* locked_list = &lock->semaphore.waiters;
-  for(e = list_begin(locked_list); e!=list_end(locked_list); e=list_next(locked_list)){
-    struct thread* temp = list_entry(e, struct thread, elem);
-    if(temp->donated_count > 0){
-      temp->priority = temp->first_priority;
-      temp->donated_count -= 1;
-      /* what if donated_count >1? yunseong */
-    }
+  struct thread* curr = thread_current();
+  if (curr->donated_count >0){
+    curr->priority = curr->first_priority;
+    curr->donated_count -= 1;
+    /* what if donated_count >1? yunseong */
   }
+  // for(e = list_begin(locked_list); e!=list_end(locked_list); e=list_next(locked_list)){
+  //   struct thread* temp = list_entry(e, struct thread, elem);
+  //   if(temp->donated_count > 0){
+  //     temp->priority = temp->first_priority;
+  //     temp->donated_count -= 1;
+  //     /* what if donated_count >1? yunseong */
+  //   }
+  // }
 }
 void
 lock_release (struct lock *lock) 
