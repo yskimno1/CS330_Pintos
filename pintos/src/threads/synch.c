@@ -260,10 +260,11 @@ lock_donate_rollback (struct lock *lock){
   struct list* locked_list = &lock->semaphore.waiters;
   for(e = list_begin(locked_list); e!=list_end(locked_list); e=list_next(locked_list)){
     struct thread* temp = list_entry(e, struct thread, elem);
-    if(temp->is_donated){
+    if(temp->is_donated>0){
       temp->priority = temp->first_priority;
-      temp->is_donated = 0;;
+      temp->is_donated = 0;
     }
+    list_remove(e);
   }
 }
 
