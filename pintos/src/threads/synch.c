@@ -191,10 +191,11 @@ lock_donate (struct lock *lock)
   struct thread* curr = thread_current();
   if(lock->holder->priority < &curr->priority){
     /* donation occurs */
-    if(lock->holder->first_priority == -1){ /* first donation */
+    if(lock->holder->first_priority == 0){ /* first donation */
       lock->holder->first_priority = lock->holder->priority;
     }
     lock->holder->priority = &curr->priority;
+    lock->holder->isdonated = 1;
     /* no nested loop yet */
   }
   else{
@@ -259,9 +260,9 @@ lock_donate_rollback (struct lock *lock){
   struct list* locked_list = &lock->semaphore.waiters;
   for(e = list_begin(locked_list); e!=list_end(locked_list); e=list_next(locked_list)){
     struct thread* temp = list_entry(e, struct thread, elem);
-    if(temp->first_priority != -1){
+    if(temp->isdonated){
       temp->priority = temp->first_priority;
-      temp->first_priority = -1;
+      temp->isdonated = 0;;
     }
   }
 }
