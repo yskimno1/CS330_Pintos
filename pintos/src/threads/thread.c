@@ -341,7 +341,7 @@ get_wakeup_call_time ()
 bool
 compare_priority (struct list_elem* a, struct list_elem* b, void* aux)
 {
-  return (list_entry(a, struct thread, elem)->priority >= list_entry(b, struct thread, elem)->priority);
+  return (list_entry(a, struct thread, elem)->priority > list_entry(b, struct thread, elem)->priority);
 }
 
 /* compare elem and e's wakeup_time */
