@@ -194,6 +194,7 @@ lock_donate (struct lock *lock)
       lock->holder->first_priority = lock->holder->priority;
     }
     lock->holder->priority = curr->priority;
+    lock->holder->donated_count += 1;
   }
 }
 /* Acquires LOCK, sleeping until it becomes available if
