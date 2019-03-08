@@ -189,12 +189,12 @@ void
 lock_donate (struct lock *lock)
 {
   struct thread* curr = thread_current();
-  if(lock->holder->priority < &curr->priority){
+  if(lock->holder->priority < curr->priority){
     /* donation occurs */
     if(lock->holder->is_donated == 0){ /* first donation */
       lock->holder->first_priority = lock->holder->priority;
     }
-    lock->holder->priority = &curr->priority;
+    lock->holder->priority = curr->priority;
     lock->holder->is_donated = 1;
     /* no nested loop yet */
   }
