@@ -184,6 +184,26 @@ lock_init (struct lock *lock)
   sema_init (&lock->semaphore, 1);
 }
 
+/* Lock_Donation occurs when the lock_acquire wants to acq already-required-lock */
+void
+lock_donate (struct lock *lock)
+{
+  struct thread* curr = thread_current();
+  if(lock->holder->priority < &curr->priority){
+    /* donation occurs */
+    if(lock->holder->first_priority == -1){ /* first donation */
+      lock->holder->first_priority = lock->holder->priority;
+    }
+    lock->holder->priority = &curr->priority;
+    /* no nested loop yet */
+  }
+  else{
+    /* no donation, just put into the sema->waiting list */
+  }
+  list_insert_ordered(&lock->semaphore.waiters, &curr->elem, compare_priority, 0);
+  thread_block();  
+}
+
 /* Acquires LOCK, sleeping until it becomes available if
    necessary.  The lock must not already be held by the current
    thread.
@@ -198,6 +218,10 @@ lock_acquire (struct lock *lock)
   ASSERT (lock != NULL);
   ASSERT (!intr_context ());
   ASSERT (!lock_held_by_current_thread (lock));
+
+  if(lock->holder != NULL){
+    lock_donate(lock);
+  }
 
   sema_down (&lock->semaphore);
   lock->holder = thread_current ();
@@ -230,10 +254,25 @@ lock_try_acquire (struct lock *lock)
    make sense to try to release a lock within an interrupt
    handler. */
 void
+lock_donate_rollback (struct lock *lock){
+  struct list_elem* e;
+  struct list* locked_list = &lock->semaphore.waiters;
+  for(e = list_begin(locked_list); e!=list_end(locked_list); e=list_next(locked_list)){
+    struct thread* temp = list_entry(e, struct thread, elem);
+    if(temp->first_priority != -1){
+      temp->priority = temp->first_priority;
+      temp->first_priority = -1;
+    }
+  }
+}
+
+void
 lock_release (struct lock *lock) 
 {
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
+
+  lock_donate_rollback(lock);
 
   lock->holder = NULL;
   sema_up (&lock->semaphore);
