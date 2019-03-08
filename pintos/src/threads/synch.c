@@ -275,7 +275,7 @@ find_highest_priority_lock(struct list* lock_list)
         max_priority = temp_new->priority;
     }
   }
-  assert(max_priority==-1);
+  ASSERT(max_priority==-1);
   return max_priority;
 }
 void
