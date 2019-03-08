@@ -90,6 +90,8 @@ struct thread
     int priority;                       /* Priority. */
     int first_priority;
     int is_donated;
+    struct list lock_list;
+    struct list waiting_lock_list;
     int64_t wakeup_time;
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */

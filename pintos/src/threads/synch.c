@@ -201,7 +201,6 @@ lock_donate (struct lock *lock)
   else{
     /* no donation, just put into the sema->waiting list */
   }
-  list_insert_ordered(&lock->semaphore.waiters, &curr->elem, compare_priority, 0);
   // thread_block();  
 }
 
@@ -220,10 +219,15 @@ lock_acquire (struct lock *lock)
   ASSERT (!intr_context ());
   ASSERT (!lock_held_by_current_thread (lock));
 
+  struct thread* curr = thread_current();
   if(lock->holder != NULL){
+    list_insert_ordered(&lock->semaphore.waiters, &curr->elem, compare_priority, 0);
+    list_push_back(&curr->waiting_lock_list, &lock->elem);
     lock_donate(lock);
   }
-
+  else{
+    list_push_back(&curr->lock_list, &lock->elem );
+  }
   sema_down (&lock->semaphore);
   lock->holder = thread_current ();
 }
@@ -260,12 +264,13 @@ lock_donate_rollback (struct lock *lock){
   struct list* locked_list = &lock->semaphore.waiters;
   for(e = list_begin(locked_list); e!=list_end(locked_list); e=list_next(locked_list)){
     struct thread* temp = list_entry(e, struct thread, elem);
+    /* their waiting_lock_list solve yunseong*/
     if(temp->is_donated>0){
       temp->priority = temp->first_priority;
       temp->is_donated = 0;
     }
-    list_remove(e);
   }
+  /* if this lock's holder has other lock? */
 }
 
 void
@@ -274,8 +279,11 @@ lock_release (struct lock *lock)
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
 
+  list_remove(&lock->elem);
   lock_donate_rollback(lock);
 
+  /* lock->holder->lock_list have to solve yunseong */
+  
   lock->holder = NULL;
   sema_up (&lock->semaphore);
 }
