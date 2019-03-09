@@ -272,23 +272,36 @@ void
 lock_re_donate (struct lock* lock) // start at here, yunseong...
 {
   struct list_elem* e;
-  struct list* locked_list = &lock->semaphore.waiters;
+  struct list_elem* e_lock;
+
   struct thread* curr = thread_current();
+  struct list* lock_list = &(curr->lock_list);
+  
+  struct list* lock_curr_list = &(lock->semaphore.waiters);
+  if(!list_empty(lock_curr_list)){
+    for (e = list_begin (lock_curr_list); e != list_end (lock_curr_list); e = list_next (e)){
+      struct thread* locked_thread = list_entry(e, struct thread, elem);
+      locked_thread->waiting_lock = NULL;
+    }
+  }
 
   if(curr->donated_count >0){
     curr->priority = curr->first_priority;
     curr->donated_count = 0;
     int new_priority = -1;
-    if(!list_empty(locked_list)){
-      ASSERT(0);
-      for (e = list_begin (locked_list); e != list_end (locked_list); e = list_next (e)){
-        struct thread* locked_thread = list_entry(e, struct thread, elem);
-        locked_thread->waiting_lock = NULL;
-        if(locked_thread->priority > new_priority) new_priority=locked_thread->priority;
-      }
-      if(new_priority != -1){
-        curr->priority = new_priority;
-        curr->donated_count += 1;
+    for(e_lock=list_begin(lock_list); e_lock!=list_end(lock_list); e_lock=list_next(e_lock)){
+      struct lock* each_lock = list_entry(e_lock, struct lock, elem_lock);
+      struct list* locked_list = &(each_lock->semaphore.waiters);
+
+      if(!list_empty(locked_list)){
+        for (e = list_begin (locked_list); e != list_end (locked_list); e = list_next (e)){
+          struct thread* locked_thread = list_entry(e, struct thread, elem);
+          if(locked_thread->priority > new_priority) new_priority=locked_thread->priority;
+        }
+        if(new_priority != -1){
+          curr->priority = new_priority;
+          curr->donated_count += 1;
+        }
       }
     }
   }
