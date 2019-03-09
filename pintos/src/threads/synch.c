@@ -115,9 +115,12 @@ sema_up (struct semaphore *sema)
   ASSERT (sema != NULL);
 
   old_level = intr_disable ();
-  if (!list_empty (&sema->waiters)) 
+  if (!list_empty (&sema->waiters)){ 
+    /* need to sort yunseong */
+    list_sort(&sema->waiters, compare_priority, 0);
     thread_unblock (list_entry (list_pop_front (&sema->waiters),
                                 struct thread, elem));
+  }
   sema->value++;
   thread_yield();
   intr_set_level (old_level);
@@ -181,7 +184,6 @@ lock_init (struct lock *lock)
   ASSERT (lock != NULL);
 
   lock->holder = NULL;
-  lock->highest_priority = 0;
   sema_init (&lock->semaphore, 1);
 }
 
@@ -254,19 +256,6 @@ lock_try_acquire (struct lock *lock)
    make sense to try to release a lock within an interrupt
    handler. */
 
-// int
-// find_highest_priority_lock(struct list* lock_list)
-// {
-//   struct list_elem* e;
-//   int max_priority = -1;
-//   for (e = list_begin (lock_list); e != list_end (lock_list); e = list_next (e)){
-//     struct lock* temp_lock = list_entry(e, struct lock, elem_lock);
-//     struct thread* temp_thread = list_begin(&temp_lock->semaphore.waiters);
-//     if(temp_thread->priority > max_priority)
-//       max_priority = temp_thread->priority;
-//   }
-//   return max_priority;
-// }
 
 void
 lock_re_donate (struct lock* lock) // start at here, yunseong...
@@ -316,7 +305,7 @@ lock_release (struct lock *lock)
 
   lock_re_donate(lock);
   lock->holder = NULL;
-  // list_remove(&lock->elem_lock_wait);
+
   sema_up (&lock->semaphore);
 }
 
