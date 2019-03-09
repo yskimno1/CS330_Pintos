@@ -537,7 +537,7 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   list_init(&(t->lock_list));
-  list_init(&(t->lock_waiting_list));
+  lock_init(&t->waiting_lock);
   t->first_priority = priority;
   t->donated_count = 0;
   t->magic = THREAD_MAGIC;

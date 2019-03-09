@@ -189,23 +189,16 @@ void
 lock_donate (struct lock *lock)
 {
   struct thread* curr = thread_current();
-  struct list* waiting_list = &(lock->holder)->lock_waiting_list;
-  if(lock->holder->priority < curr->priority){
-    /*donation occurs */
-    // if(lock->holder->donated_count ==0){
-    //   lock->holder->first_priority = lock->holder->priority;
-    // }
-    lock->holder->priority = curr->priority;
-    lock->holder->donated_count += 1;
-  }
-  
-  if(!list_empty(&(lock->holder->lock_waiting_list))){
-    /* other locks exist, so upper-donate happens */
-    struct list_elem* e;
-    for (e = list_begin (waiting_list); e != list_end (waiting_list); e = list_next (e)){
-      struct lock* temp = list_entry(e, struct lock, elem_lock_wait);
-      if(temp->holder != NULL){
-        lock_donate(temp);
+  struct thread* lock_holder = lock->holder;
+
+  if(lock_holder->priority < curr->priority){
+
+    lock_holder->priority = curr->priority;
+    lock_holder->donated_count += 1;
+
+    if(lock_holder->waiting_lock != NULL){ /* more donation */
+      if(lock_holder->waiting_lock->holder != NULL){
+        lock_donate(lock_holder->waiting_lock);
       }
     }
   }
@@ -226,8 +219,8 @@ lock_acquire (struct lock *lock)
   ASSERT (!lock_held_by_current_thread (lock));
   struct thread* curr = thread_current();
   if(lock->holder != NULL){
-    list_push_back(&curr->lock_waiting_list, &lock->elem_lock_wait);
     lock_donate(lock);
+    curr->waiting_lock = lock;
   } 
   sema_down (&lock->semaphore);
   lock->holder = thread_current ();
@@ -261,41 +254,52 @@ lock_try_acquire (struct lock *lock)
    make sense to try to release a lock within an interrupt
    handler. */
 
-int
-find_highest_priority_lock(struct list* lock_list)
-{
-  struct list_elem* e;
-  int max_priority = -1;
-  for (e = list_begin (lock_list); e != list_end (lock_list); e = list_next (e)){
-    struct lock* temp_lock = list_entry(e, struct lock, elem_lock);
-    struct thread* temp_thread = list_begin(&temp_lock->semaphore.waiters);
-    if(temp_thread->priority > max_priority)
-      max_priority = temp_thread->priority;
-  }
-  return max_priority;
-}
+// int
+// find_highest_priority_lock(struct list* lock_list)
+// {
+//   struct list_elem* e;
+//   int max_priority = -1;
+//   for (e = list_begin (lock_list); e != list_end (lock_list); e = list_next (e)){
+//     struct lock* temp_lock = list_entry(e, struct lock, elem_lock);
+//     struct thread* temp_thread = list_begin(&temp_lock->semaphore.waiters);
+//     if(temp_thread->priority > max_priority)
+//       max_priority = temp_thread->priority;
+//   }
+//   return max_priority;
+// }
 
 void
 lock_re_donate (struct lock* lock) // start at here, yunseong...
 {
   struct list_elem* e;
   struct list* locked_list = &lock->semaphore.waiters;
-  // struct thread* curr = thread_current();
-  struct thread* curr = lock->holder;
-  int new_priority = -1;
-  curr->priority = curr->first_priority;
-  curr->donated_count -= 1;
-  if (!list_empty(&curr->lock_list)){
-    new_priority = find_highest_priority_lock(&curr->lock_list);
-    if(new_priority != -1) curr->priority = new_priority;
+  struct thread* curr = thread_current();
+
+  if(curr->donated_count >0){
+    curr->priority = curr->first_priority;
+    curr->donated_count -= 1;
+    int new_priority = -1;
+    if(!list_empty(locked_list)){
+      for (e = list_begin (locked_list); e != list_end (locked_list); e = list_next (e)){
+        struct thread* locked_thread = list_entry(e, struct thread, elem);
+        locked_thread->waiting_lock = NULL;
+
+        if(locked_thread->priority > new_priority)
+            new_priority=locked_thread->priority;
+
+      }
+      if(new_priority != -1) curr->priority = new_priority;
+    }
   }
 }
+
 void
 lock_release (struct lock *lock) 
 {
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
   list_remove(&lock->elem_lock);
+
   lock_re_donate(lock);
   lock->holder = NULL;
   // list_remove(&lock->elem_lock_wait);
