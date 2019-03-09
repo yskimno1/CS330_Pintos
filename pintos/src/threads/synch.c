@@ -307,10 +307,10 @@ lock_release (struct lock *lock)
 {
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
-  lock_re_donate(lock);
-
-  lock->holder = NULL;
   list_remove(&lock->elem_lock);
+  lock_re_donate(lock);
+  lock->holder = NULL;
+  
   // list_remove(&lock->elem_lock_wait);
   sema_up (&lock->semaphore);
 }
