@@ -181,6 +181,7 @@ lock_init (struct lock *lock)
   ASSERT (lock != NULL);
 
   lock->holder = NULL;
+  lock->highest_priority = 0;
   sema_init (&lock->semaphore, 1);
 }
 
@@ -266,29 +267,27 @@ find_highest_priority_lock(struct list* lock_list)
   struct list_elem* e;
   int max_priority = -1;
   for (e = list_begin (lock_list); e != list_end (lock_list); e = list_next (e)){
-    struct lock* temp = list_entry(e, struct lock, elem);
-    struct list* waiting_list = &temp->semaphore.waiters;
-    struct list_elem* e_new;
-    for(e_new=list_begin(waiting_list); e_new!=list_end(waiting_list); e_new=list_next(e_new)){
-      struct thread* temp_new = list_entry(e_new, struct thread, elem);
-      if(temp_new->priority > max_priority)
-        max_priority = temp_new->priority;
-    }
+    struct lock* temp_lock = list_entry(e, struct lock, elem);
+    struct thread* temp_thread = list_begin(&temp_lock->semaphore.waiters);
+    if(temp_thread->priority > max_priority)
+      max_priority = temp_thread->priority;
   }
   ASSERT(max_priority==-1);
   return max_priority;
 }
 void
-lock_re_donate (struct lock* lock)
+lock_re_donate (struct lock* lock) // start at here, yunseong...
 {
   struct list_elem* e;
   struct list* locked_list = &lock->semaphore.waiters;
-  struct thread* curr = thread_current();
+  // struct thread* curr = thread_current();
+  struct thread* curr = lock->holder;
   int new_priority = -1;
   if (curr->donated_count >0){
     curr->priority = curr->first_priority;
     curr->donated_count -= 1;
-    /* what if donated_count >1? yunseong */
+    //list_remove()
+    // new_priority = find_highest_priority_lock(&curr->lock_list);
     if(curr->donated_count >0){
       new_priority = find_highest_priority_lock(&curr->lock_list);
       curr->priority = new_priority;
@@ -311,6 +310,7 @@ lock_release (struct lock *lock)
   lock_re_donate(lock);
 
   lock->holder = NULL;
+  list_remove(&lock->elem);
   sema_up (&lock->semaphore);
 }
 
