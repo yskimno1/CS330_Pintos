@@ -275,6 +275,7 @@ find_highest_priority_lock(struct list* lock_list)
   ASSERT(max_priority==-1);
   return max_priority;
 }
+
 void
 lock_re_donate (struct lock* lock) // start at here, yunseong...
 {
@@ -283,15 +284,11 @@ lock_re_donate (struct lock* lock) // start at here, yunseong...
   // struct thread* curr = thread_current();
   struct thread* curr = lock->holder;
   int new_priority = -1;
-  if (curr->donated_count >0){
-    curr->priority = curr->first_priority;
-    curr->donated_count -= 1;
-    //list_remove()
-    // new_priority = find_highest_priority_lock(&curr->lock_list);
-    if(!list_empty(&curr->lock_list)){
-      new_priority = find_highest_priority_lock(&curr->lock_list);
-      curr->priority = new_priority;
-    }
+  curr->priority = curr->first_priority;
+  curr->donated_count -= 1;
+  if (!list_empty(&curr->lock_list)){
+    new_priority = find_highest_priority_lock(&curr->lock_list);
+    curr->priority = new_priority;
   }
   // for(e = list_begin(locked_list); e!=list_end(locked_list); e=list_next(locked_list)){
   //   struct thread* temp = list_entry(e, struct thread, elem);
