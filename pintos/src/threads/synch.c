@@ -311,7 +311,7 @@ lock_release (struct lock *lock)
 
   lock->holder = NULL;
   list_remove(&lock->elem_lock);
-  list_remove(&lock->elem_lock_wait);
+  // list_remove(&lock->elem_lock_wait);
   sema_up (&lock->semaphore);
 }
 
