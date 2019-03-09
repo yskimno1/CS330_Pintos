@@ -288,7 +288,7 @@ lock_re_donate (struct lock* lock) // start at here, yunseong...
     curr->donated_count -= 1;
     //list_remove()
     // new_priority = find_highest_priority_lock(&curr->lock_list);
-    if(curr->donated_count >0){
+    if(!list_empty(&curr->lock_list)){
       new_priority = find_highest_priority_lock(&curr->lock_list);
       curr->priority = new_priority;
     }
