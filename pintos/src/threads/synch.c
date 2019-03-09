@@ -288,7 +288,10 @@ lock_re_donate (struct lock* lock) // start at here, yunseong...
             new_priority=locked_thread->priority;
 
       }
-      if(new_priority != -1) curr->priority = new_priority;
+      if(new_priority != -1){
+        curr->priority = new_priority;
+        curr->donated_count += 1;
+      }
     }
   }
 }
