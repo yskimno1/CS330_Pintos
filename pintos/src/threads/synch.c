@@ -192,18 +192,18 @@ lock_donate (struct lock *lock)
   struct list* waiting_list = &(lock->holder)->lock_waiting_list;
   if(lock->holder->priority < curr->priority){
     /*donation occurs */
-    if(lock->holder->donated_count ==0){
-      lock->holder->first_priority = lock->holder->priority;
-    }
+    // if(lock->holder->donated_count ==0){
+    //   lock->holder->first_priority = lock->holder->priority;
+    // }
     lock->holder->priority = curr->priority;
     lock->holder->donated_count += 1;
   }
   
-  if(!list_empty(&(lock->holder)->lock_waiting_list)){
+  if(!list_empty(&(lock->holder->lock_waiting_list))){
     /* other locks exist, so upper-donate happens */
     struct list_elem* e;
     for (e = list_begin (waiting_list); e != list_end (waiting_list); e = list_next (e)){
-      struct lock* temp = list_entry(e, struct lock, elem);
+      struct lock* temp = list_entry(e, struct lock, elem_lock_wait);
       if(temp->holder != NULL){
         lock_donate(temp);
       }
@@ -226,12 +226,12 @@ lock_acquire (struct lock *lock)
   ASSERT (!lock_held_by_current_thread (lock));
   struct thread* curr = thread_current();
   if(lock->holder != NULL){
-    list_push_back(&curr->lock_waiting_list, &lock->elem);
+    list_push_back(&curr->lock_waiting_list, &lock->elem_lock_wait);
     lock_donate(lock);
   } 
   sema_down (&lock->semaphore);
   lock->holder = thread_current ();
-  list_push_back(&curr->lock_list, &lock->elem);
+  list_push_back(&curr->lock_list, &lock->elem_lock);
 }
 
 /* Tries to acquires LOCK and returns true if successful or false
@@ -267,7 +267,7 @@ find_highest_priority_lock(struct list* lock_list)
   struct list_elem* e;
   int max_priority = -1;
   for (e = list_begin (lock_list); e != list_end (lock_list); e = list_next (e)){
-    struct lock* temp_lock = list_entry(e, struct lock, elem);
+    struct lock* temp_lock = list_entry(e, struct lock, elem_lock);
     struct thread* temp_thread = list_begin(&temp_lock->semaphore.waiters);
     if(temp_thread->priority > max_priority)
       max_priority = temp_thread->priority;
@@ -310,7 +310,8 @@ lock_release (struct lock *lock)
   lock_re_donate(lock);
 
   lock->holder = NULL;
-  list_remove(&lock->elem);
+  list_remove(&lock->elem_lock);
+  list_remove(&lock->elem_lock_wait);
   sema_up (&lock->semaphore);
 }
 
