@@ -187,6 +187,9 @@ lock_init (struct lock *lock)
   sema_init (&lock->semaphore, 1);
 }
 
+/*  check the priority, whether thread have to donate new priority.
+    It can call itself, to donate the upper holder recursively.
+*/
 void
 lock_donate (struct lock *lock)
 {
@@ -205,6 +208,7 @@ lock_donate (struct lock *lock)
     }
   }
 }
+
 /* Acquires LOCK, sleeping until it becomes available if
    necessary.  The lock must not already be held by the current
    thread.
@@ -249,14 +253,11 @@ lock_try_acquire (struct lock *lock)
   return success;
 }
 
-/* Releases LOCK, which must be owned by the current thread.
-   This is lock_release function.
+/*  check whether the lock have to roll-back the donated priority
+    If the current (trying to release) lock was donated previously,
+    after roll-backing, we have to check other donation exists.
 
-   An interrupt handler cannot acquire a lock, so it does not
-   make sense to try to release a lock within an interrupt
-   handler. */
-
-
+*/
 void
 lock_re_donate () // start at here, yunseong...
 {
@@ -288,6 +289,12 @@ lock_re_donate () // start at here, yunseong...
   }
 }
 
+/* Releases LOCK, which must be owned by the current thread.
+   This is lock_release function.
+
+   An interrupt handler cannot acquire a lock, so it does not
+   make sense to try to release a lock within an interrupt
+   handler. */
 void
 lock_release (struct lock *lock) 
 {
@@ -338,6 +345,23 @@ cond_init (struct condition *cond)
   list_init (&cond->waiters);
 }
 
+/*  Comparing the each semaphore's highest-priority threads' priority
+    before comparing, sometimes sema lists have to be sorted,
+    so cond_signal function sorts the list by priority.
+*/
+bool
+compare_cond_priority(struct list_elem* a, struct list_elem* b, void* aux){
+  struct semaphore_elem* sema_a = list_entry(a, struct semaphore_elem, elem);
+  struct semaphore_elem* sema_b = list_entry(b, struct semaphore_elem, elem);
+  if(list_empty(&sema_a->semaphore.waiters)) return false;
+  if(list_empty(&sema_b->semaphore.waiters)) return true;
+
+  struct thread* thread_a = list_entry(list_front(&sema_a->semaphore.waiters), struct thread, elem); // need to sort?
+  struct thread* thread_b = list_entry(list_front(&sema_b->semaphore.waiters), struct thread, elem);
+
+  return (thread_a->priority > thread_b->priority);
+}
+
 /* Atomically releases LOCK and waits for COND to be signaled by
    some other piece of code.  After COND is signaled, LOCK is
    reacquired before returning.  LOCK must be held before calling
@@ -358,19 +382,6 @@ cond_init (struct condition *cond)
    interrupt handler.  This function may be called with
    interrupts disabled, but interrupts will be turned back on if
    we need to sleep. */
-bool
-compare_cond_priority(struct list_elem* a, struct list_elem* b, void* aux){
-  struct semaphore_elem* sema_a = list_entry(a, struct semaphore_elem, elem);
-  struct semaphore_elem* sema_b = list_entry(b, struct semaphore_elem, elem);
-  if(list_empty(&sema_a->semaphore.waiters)) return false;
-  if(list_empty(&sema_b->semaphore.waiters)) return true;
-
-  struct thread* thread_a = list_entry(list_front(&sema_a->semaphore.waiters), struct thread, elem); // need to sort?
-  struct thread* thread_b = list_entry(list_front(&sema_b->semaphore.waiters), struct thread, elem);
-
-  return (thread_a->priority > thread_b->priority);
-}
-
 void
 cond_wait (struct condition *cond, struct lock *lock) 
 {

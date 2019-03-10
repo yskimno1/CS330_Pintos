@@ -92,7 +92,6 @@ static int64_t wakeup_call_time = INT64_MAX;
    finishes. */
 
 /* This is 2016 spring cs330 skeleton code */
-
 void
 thread_init (void) 
 {
@@ -338,6 +337,7 @@ get_wakeup_call_time ()
   return wakeup_call_time;
 }
 
+/* compare elem and e's priority */
 bool
 compare_priority (struct list_elem* a, struct list_elem* b, void* aux)
 {
@@ -366,6 +366,7 @@ thread_sleep (void)
   thread_block();
   intr_set_level (old_level);
 }
+
 void
 print_all_time()
 {
