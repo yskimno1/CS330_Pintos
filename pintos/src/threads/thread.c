@@ -427,7 +427,12 @@ thread_set_priority (int new_priority)
       }
     }
   }
-  else if(prev_priority > curr->priority) thread_yield();
+  else if(prev_priority > curr->priority){
+    if(!list_empty(&curr->lock_list)){
+      lock_re_donate();
+    }
+    thread_yield();
+  } 
   intr_set_level(old_level);
 }
 
