@@ -410,8 +410,25 @@ thread_set_wakeup_time (int64_t wakeup_time)
 void
 thread_set_priority (int new_priority) 
 {
-  thread_current ()->priority = new_priority;
-  thread_yield();
+  enum intr_level old_level;
+  old_level = intr_disable();
+
+  struct thread* curr = thread_current();
+  int prev_priority;
+  prev_priority = curr->priority;
+  curr->first_priority = new_priority;
+  curr->priority = new_priority;
+
+  /* check if donated */
+  if(prev_priority < curr->priority){
+    if(curr->waiting_lock != NULL){
+      if(curr->waiting_lock->holder != NULL){
+        lock_donate(curr->waiting_lock);
+      }
+    }
+  }
+  else if(prev_priority > curr->priority) thread_yield();
+  intr_set_level(old_level);
 }
 
 /* Returns the current thread's priority. */
