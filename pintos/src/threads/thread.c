@@ -391,7 +391,6 @@ thread_wakeup (int64_t ticks)
   while(e != list_end(&sleep_list)){
     struct thread* temp = list_entry(e, struct thread, elem);
     if(temp->wakeup_time <= ticks){
-      ASSERT(0);
       e = list_remove(&temp->elem); // point next element before remove
       thread_unblock(temp);
     }
