@@ -231,7 +231,7 @@ lock_acquire (struct lock *lock)
   } 
   sema_down (&lock->semaphore);
   lock->holder = thread_current ();
-  if(!thread_mlfqs) list_push_back(&curr->lock_list, &lock->elem_lock);
+  list_push_back(&curr->lock_list, &lock->elem_lock);
 }
 
 /* Tries to acquires LOCK and returns true if successful or false
@@ -301,7 +301,6 @@ lock_release (struct lock *lock)
 {
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
-  ASSERT(0);
   list_remove(&lock->elem_lock);
   struct list_elem* e;  
   struct list* lock_curr_list = &(lock->semaphore.waiters);
