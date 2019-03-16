@@ -301,7 +301,7 @@ lock_release (struct lock *lock)
 {
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
-  ASSERT(1);
+  ASSERT(0);
   list_remove(&lock->elem_lock);
   struct list_elem* e;  
   struct list* lock_curr_list = &(lock->semaphore.waiters);
