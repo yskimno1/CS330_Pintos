@@ -492,7 +492,7 @@ calculate_recent_cpu_by_load_avg(void)
 {
   struct list_elem* e;
   for(e = list_begin(&all_list); e!=list_end(&all_list); e=list_next(e)){
-    struct thread* temp = list_entry(e, struct thread, elem);
+    struct thread* temp = list_entry(e, struct thread, elem_all);
     thread_calculate_recent_cpu(temp);
   }
 }
@@ -501,7 +501,7 @@ void
 calculate_priority_mlfqs(void){
   struct list_elem* e;
   for(e = list_begin(&all_list); e!=list_end(&all_list); e=list_next(e)){
-    struct thread* temp = list_entry(e, struct thread, elem);
+    struct thread* temp = list_entry(e, struct thread, elem_all);
     thread_calculate_priority(temp);
   }
   if(!list_empty(&ready_list)) list_sort(&ready_list, compare_priority, 0);
