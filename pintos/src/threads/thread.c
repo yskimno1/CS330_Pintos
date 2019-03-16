@@ -628,11 +628,11 @@ init_thread (struct thread *t, const char *name, int priority)
   t->magic = THREAD_MAGIC;
 
   list_push_back(&all_list, &t->elem_all);
-
-  t->nice = 0;
-  if(t==initial_thread) t->recent_cpu=0;
-  else t->recent_cpu = thread_get_recent_cpu();
-
+  if(thread_mlfqs){
+    t->nice = 0;
+    if(t==initial_thread) t->recent_cpu=0;
+    else t->recent_cpu = thread_get_recent_cpu();
+  }
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
