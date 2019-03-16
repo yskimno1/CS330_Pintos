@@ -479,11 +479,8 @@ thread_calculate_recent_cpu(struct thread* th){
 void
 thread_calculate_priority(struct thread* th){
   if(th != idle_thread){
-    int temp;
-    if(th->recent_cpu>=0) temp=CONVERT_TO_NEAR_INT_POS(th->recent_cpu/4);
-    else temp=CONVERT_TO_NEAR_INT_NEG(th->recent_cpu/4);
-
-    th->priority = PRI_MAX-temp-(th->nice *2);
+    if(th->recent_cpu/4 >=0) th->priority = PRI_MAX-ONVERT_TO_NEAR_INT_POS(th->recent_cpu/4)-(th->nice *2);
+    else th->priority = PRI_MAX-ONVERT_TO_NEAR_INT_NEG(th->recent_cpu/4)-(th->nice *2);
 
     if(th->priority < PRI_MIN) th->priority = PRI_MIN;
     if(th->priority > PRI_MAX) th->priority = PRI_MAX;
