@@ -253,10 +253,8 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  // list_push_back (&ready_list, &t->elem);
   list_insert_ordered(&ready_list, &t->elem, compare_priority, 0);
   
-
   t->status = THREAD_READY;
   intr_set_level (old_level);
 }
@@ -327,7 +325,6 @@ thread_yield (void)
   old_level = intr_disable ();
   if (curr != idle_thread) 
     list_insert_ordered(&ready_list, &curr->elem, compare_priority, 0);
-    // list_push_back (&ready_list, &curr->elem);
   curr->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -400,13 +397,12 @@ thread_wakeup (int64_t ticks)
     }
     else{
       update_wakeup_call_time(temp->wakeup_time);
-      //e=list_next(e);
       break;
     }
      // point next element
   }
   if(list_size(&sleep_list) == 0){
-    update_wakeup_call_time(INT64_MAX); // yunseong
+    update_wakeup_call_time(INT64_MAX);
   }
 }
 
@@ -518,7 +514,6 @@ calculate_priority_mlfqs(void){
 void
 thread_calculate_load_avg(void)
 {
-
   if(thread_current()==idle_thread){
     load_avg = MUL_FIXED_POINT( CONVERT_TO_FIXED_POINT(59) /60, load_avg)+(CONVERT_TO_FIXED_POINT(1)/60*list_size(&ready_list));
   }
@@ -636,11 +631,11 @@ init_thread (struct thread *t, const char *name, int priority)
   t->magic = THREAD_MAGIC;
 
   list_push_back(&all_list, &t->elem_all);
-  if(thread_mlfqs){
-    t->nice = 0;
-    if(t==initial_thread) t->recent_cpu=0;
-    else t->recent_cpu = thread_get_recent_cpu();
-  }
+
+  t->nice = 0;
+  if(t==initial_thread) t->recent_cpu=0;
+  else t->recent_cpu = thread_get_recent_cpu();
+
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
