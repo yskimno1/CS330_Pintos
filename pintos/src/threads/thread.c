@@ -480,7 +480,7 @@ void
 thread_calculate_priority(struct thread* th){
   if(th != idle_thread){
     int temp;
-    if(th->recent_cpu/4 >=0) temp=CONVERT_TO_NEAR_INT_POS(th->recent_cpu/4);
+    if(th->recent_cpu>=0) temp=CONVERT_TO_NEAR_INT_POS(th->recent_cpu/4);
     else temp=CONVERT_TO_NEAR_INT_NEG(th->recent_cpu/4);
 
     th->priority = PRI_MAX-temp-(th->nice *2);
@@ -522,10 +522,11 @@ calculate_priority_mlfqs(void){
 void
 thread_calculate_load_avg(void)
 {
+  
   if(thread_current()==idle_thread){
-    load_avg = MUL_FIXED_POINT(DIV_FIXED_POINT(59, 60), load_avg)+(DIV_FIXED_POINT(1, 60)*list_size(&ready_list));
+    load_avg = MUL_FIXED_POINT( CONVERT_TO_FIXED_POINT(59) /60, load_avg)+(CONVERT_TO_FIXED_POINT(1)/60*list_size(&ready_list));
   }
-  else load_avg = MUL_FIXED_POINT(DIV_FIXED_POINT(59, 60), load_avg)+(DIV_FIXED_POINT(1, 60)*(list_size(&ready_list)+1));
+  else load_avg = MUL_FIXED_POINT(CONVERT_TO_FIXED_POINT(59)/60, load_avg) + (CONVERT_TO_FIXED_POINT(1)/60*(list_size(&ready_list)+1));
 }
 
 /* Returns 100 times the system load average. */
