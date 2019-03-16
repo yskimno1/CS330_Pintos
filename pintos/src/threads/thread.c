@@ -11,6 +11,7 @@
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
+#include "threads/fixed_point.h"
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
@@ -40,6 +41,8 @@ static struct thread *initial_thread;
 
 /* Lock used by allocate_tid(). */
 static struct lock tid_lock;
+
+static int load_avg;
 
 /* Stack frame for kernel_thread(). */
 struct kernel_thread_frame 
@@ -106,6 +109,7 @@ thread_init (void)
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
+  load_avg = 0;
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -204,6 +208,8 @@ thread_create (const char *name, int priority,
   /* Stack frame for switch_threads(). */
   sf = alloc_frame (t, sizeof *sf);
   sf->eip = switch_entry;
+
+  if(thread_mlfqs) thread_calculate_priority(t);
 
   /* Add to run queue. */
   thread_unblock (t);
@@ -448,7 +454,10 @@ thread_get_priority (void)
 void
 thread_set_nice (int nice UNUSED) 
 {
-  
+  struct thread* curr = thread_current();
+  curr->nice = nice;
+  thread_calculate_recent_cpu(curr);
+  thread_calculate_priority(curr);
   /* Not yet implemented. */
 }
 
@@ -456,8 +465,67 @@ thread_set_nice (int nice UNUSED)
 int
 thread_get_nice (void) 
 {
-  /* Not yet implemented. */
   return thread_current()->nice;
+}
+
+
+void
+thread_calculate_recent_cpu(struct thread* th){
+  if(th != idle_thread){
+    th->recent_cpu =ADD_INT(MUL_FIXED_POINT(DIV_FIXED_POINT(
+                        2*load_avg, ADD_INT(2*load_avg, 1)), th->recent_cpu), th->nice);
+  }
+}
+
+void
+thread_calculate_priority(struct thread* th){
+  if(th != idle_thread){
+    int temp;
+    if(th->recent_cpu/4 >=0) temp=CONVERT_TO_NEAR_INT_POS(th->recent_cpu/4);
+    else temp=CONVERT_TO_NEAR_INT_NEG(th->recent_cpu/4);
+
+    th->priority = PRI_MAX-temp-(th->nice *2);
+  }
+  if(th->priority < PRI_MIN) th->priority = PRI_MIN;
+  if(th->priority > PRI_MAX) th->priority = PRI_MAX;
+}
+
+void
+calculate_recent_cpu_by_load_avg(void)
+{
+  struct list_elem* e;
+  for(e = list_begin(&ready_list); e!=list_end(&ready_list); e=list_next(e)){
+    struct thread* temp = list_entry(e, struct thread, elem);
+    thread_calculate_recent_cpu(temp);
+  }
+  for(e = list_begin(&sleep_list); e!=list_end(&sleep_list); e=list_next(e)){
+    struct thread* temp = list_entry(e, struct thread, elem);
+    thread_calculate_recent_cpu(temp);
+  }
+}
+
+void
+calculate_priority_mlfqs(void){
+  struct list_elem* e;
+  for(e = list_begin(&ready_list); e!=list_end(&ready_list); e=list_next(e)){
+    struct thread* temp = list_entry(e, struct thread, elem);
+    thread_calculate_priority(temp);
+  }
+  list_sort(&ready_list, compare_priority, 0);
+  for(e = list_begin(&sleep_list); e!=list_end(&sleep_list); e=list_next(e)){
+    struct thread* temp = list_entry(e, struct thread, elem);
+    thread_calculate_priority(temp);
+  }
+}
+
+/* calculate the load avg. */
+void
+thread_calculate_load_avg(void)
+{
+  if(thread_current()==idle_thread){
+    load_avg = MUL_FIXED_POINT(DIV_FIXED_POINT(59, 60), load_avg)+(DIV_FIXED_POINT(1, 60)*list_size(&ready_list));
+  }
+  else load_avg = MUL_FIXED_POINT(DIV_FIXED_POINT(59, 60), load_avg)+(DIV_FIXED_POINT(1, 60)*(list_size(&ready_list)+1));
 }
 
 /* Returns 100 times the system load average. */
@@ -473,7 +541,10 @@ int
 thread_get_recent_cpu (void) 
 {
   /* Not yet implemented. */
-  return 0;
+
+  int x = 100 * thread_current()->recent_cpu;
+  if(x>=0) return CONVERT_TO_NEAR_INT_POS(x);
+  else return CONVERT_TO_NEAR_INT_NEG(x);
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.
@@ -564,8 +635,14 @@ init_thread (struct thread *t, const char *name, int priority)
   lock_init(&t->waiting_lock);
   t->first_priority = priority;
   t->donated_count = 0;
-  t->nice = 0;
+
   t->magic = THREAD_MAGIC;
+
+  if(thread_mlfqs){
+    t->nice = 0;
+    if(t==initial_thread) t->recent_cpu=0;
+    else t->recent_cpu = thread_get_recent_cpu();
+  }
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
