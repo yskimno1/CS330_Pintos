@@ -95,6 +95,7 @@ struct thread
     struct list lock_list;
     struct lock* waiting_lock;
     struct list_elem elem;              /* List element. */
+    struct list_elem elem_all;
     int nice;                           /* nice value */
     int recent_cpu;
 

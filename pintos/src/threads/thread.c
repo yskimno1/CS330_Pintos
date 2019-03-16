@@ -33,6 +33,8 @@ static struct list ready_list;
 /* List of processes which are sleeping */
 static struct list sleep_list;
 
+static struct list all_list;
+
 /* Idle thread. */
 static struct thread *idle_thread;
 
@@ -103,6 +105,7 @@ thread_init (void)
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&sleep_list);
+  list_init (&all_list);
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
@@ -302,6 +305,7 @@ thread_exit (void)
   process_exit ();
 #endif
 
+  list_remove(&thread_current()->elem_all);
   /* Just set our status to dying and schedule another process.
      We will be destroyed during the call to schedule_tail(). */
   intr_disable ();
@@ -494,11 +498,7 @@ void
 calculate_recent_cpu_by_load_avg(void)
 {
   struct list_elem* e;
-  for(e = list_begin(&ready_list); e!=list_end(&ready_list); e=list_next(e)){
-    struct thread* temp = list_entry(e, struct thread, elem);
-    thread_calculate_recent_cpu(temp);
-  }
-  for(e = list_begin(&sleep_list); e!=list_end(&sleep_list); e=list_next(e)){
+  for(e = list_begin(&all_list); e!=list_end(&all_list); e=list_next(e)){
     struct thread* temp = list_entry(e, struct thread, elem);
     thread_calculate_recent_cpu(temp);
   }
@@ -507,11 +507,7 @@ calculate_recent_cpu_by_load_avg(void)
 void
 calculate_priority_mlfqs(void){
   struct list_elem* e;
-  for(e = list_begin(&ready_list); e!=list_end(&ready_list); e=list_next(e)){
-    struct thread* temp = list_entry(e, struct thread, elem);
-    thread_calculate_priority(temp);
-  }
-  for(e = list_begin(&sleep_list); e!=list_end(&sleep_list); e=list_next(e)){
+  for(e = list_begin(&all_list); e!=list_end(&all_list); e=list_next(e)){
     struct thread* temp = list_entry(e, struct thread, elem);
     thread_calculate_priority(temp);
   }
@@ -522,7 +518,7 @@ calculate_priority_mlfqs(void){
 void
 thread_calculate_load_avg(void)
 {
-  
+
   if(thread_current()==idle_thread){
     load_avg = MUL_FIXED_POINT( CONVERT_TO_FIXED_POINT(59) /60, load_avg)+(CONVERT_TO_FIXED_POINT(1)/60*list_size(&ready_list));
   }
@@ -637,9 +633,9 @@ init_thread (struct thread *t, const char *name, int priority)
   lock_init(&t->waiting_lock);
   t->first_priority = priority;
   t->donated_count = 0;
-
   t->magic = THREAD_MAGIC;
 
+  list_push_back(&all_list, &t->elem_all);
   if(thread_mlfqs){
     t->nice = 0;
     if(t==initial_thread) t->recent_cpu=0;
