@@ -209,10 +209,10 @@ thread_create (const char *name, int priority,
   sf = alloc_frame (t, sizeof *sf);
   sf->eip = switch_entry;
 
-  if(thread_mlfqs) thread_calculate_priority(t);
-
   /* Add to run queue. */
   thread_unblock (t);
+  if(thread_mlfqs) thread_calculate_priority(t);
+
   thread_yield();
   return tid;
 }
@@ -458,7 +458,6 @@ thread_set_nice (int nice UNUSED)
   curr->nice = nice;
   thread_calculate_recent_cpu(curr);
   thread_calculate_priority(curr);
-  /* Not yet implemented. */
 }
 
 /* Returns the current thread's nice value. */
@@ -468,10 +467,10 @@ thread_get_nice (void)
   return thread_current()->nice;
 }
 
-
 void
 thread_calculate_recent_cpu(struct thread* th){
-  if(th != idle_thread){
+  if(th == idle_thread) return;
+  else{
     th->recent_cpu =ADD_INT(MUL_FIXED_POINT(DIV_FIXED_POINT(
                         2*load_avg, ADD_INT(2*load_avg, 1)), th->recent_cpu), th->nice);
   }
@@ -485,9 +484,10 @@ thread_calculate_priority(struct thread* th){
     else temp=CONVERT_TO_NEAR_INT_NEG(th->recent_cpu/4);
 
     th->priority = PRI_MAX-temp-(th->nice *2);
+
+    if(th->priority < PRI_MIN) th->priority = PRI_MIN;
+    if(th->priority > PRI_MAX) th->priority = PRI_MAX;
   }
-  if(th->priority < PRI_MIN) th->priority = PRI_MIN;
-  if(th->priority > PRI_MAX) th->priority = PRI_MAX;
 }
 
 void
@@ -511,11 +511,11 @@ calculate_priority_mlfqs(void){
     struct thread* temp = list_entry(e, struct thread, elem);
     thread_calculate_priority(temp);
   }
-  list_sort(&ready_list, compare_priority, 0);
   for(e = list_begin(&sleep_list); e!=list_end(&sleep_list); e=list_next(e)){
     struct thread* temp = list_entry(e, struct thread, elem);
     thread_calculate_priority(temp);
   }
+  list_sort(&ready_list, compare_priority, 0);
 }
 
 /* calculate the load avg. */
