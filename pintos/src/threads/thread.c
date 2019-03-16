@@ -515,7 +515,7 @@ calculate_priority_mlfqs(void){
     struct thread* temp = list_entry(e, struct thread, elem);
     thread_calculate_priority(temp);
   }
-  list_sort(&ready_list, compare_priority, 0);
+  if(!list_empty(&ready_list)) list_sort(&ready_list, compare_priority, 0);
 }
 
 /* calculate the load avg. */
