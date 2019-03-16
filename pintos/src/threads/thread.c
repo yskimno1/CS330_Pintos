@@ -532,8 +532,9 @@ thread_calculate_load_avg(void)
 int
 thread_get_load_avg (void) 
 {
-  /* Not yet implemented. */
-  return 0;
+  int x = 100*load_avg;
+  if(x>=0) return CONVERT_TO_NEAR_INT_POS(x);
+  else return CONVERT_TO_NEAR_INT_NEG(x);
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */
