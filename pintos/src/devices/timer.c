@@ -151,7 +151,7 @@ timer_interrupt (struct intr_frame *args UNUSED)
       thread_calculate_load_avg();
       calculate_recent_cpu_by_load_avg();
     }
-    if(ticks%4==3){
+    if(ticks%4==0){
       calculate_priority_mlfqs();
     }
   }
