@@ -70,7 +70,6 @@ sema_down (struct semaphore *sema)
   while (sema->value == 0) 
     {
       list_insert_ordered(&sema->waiters, &thread_current()->elem, compare_priority, 0);
-      // list_push_back (&sema->waiters, &thread_current ()->elem);
       thread_block ();
     }
   sema->value--;
@@ -116,7 +115,6 @@ sema_up (struct semaphore *sema)
 
   old_level = intr_disable ();
   if (!list_empty (&sema->waiters)){ 
-    /* need to sort yunseong */
     list_sort(&sema->waiters, compare_priority, 0);
     thread_unblock (list_entry (list_pop_front (&sema->waiters),
                                 struct thread, elem));
@@ -187,9 +185,8 @@ lock_init (struct lock *lock)
   sema_init (&lock->semaphore, 1);
 }
 
-/*  check the priority, whether thread have to donate new priority.
-    It can call itself, to donate the upper holder recursively.
-*/
+/* check the priority, whether thread have to donate new priority.
+   It can call itself, to donate the upper holder recursively. */
 void
 lock_donate (struct lock *lock)
 {
@@ -256,11 +253,9 @@ lock_try_acquire (struct lock *lock)
 
 /*  check whether the lock have to roll-back the donated priority
     If the current (trying to release) lock was donated previously,
-    after roll-backing, we have to check other donation exists.
-
-*/
+    after roll-backing, we have to check other donation exists. */
 void
-lock_re_donate () // start at here, yunseong...
+lock_re_donate ()
 {
   struct list_elem* e;
   struct list_elem* e_lock;

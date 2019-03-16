@@ -105,8 +105,6 @@ timer_sleep (int64_t ticks)
   update_wakeup_call_time(wakeup_time);
 
   thread_sleep();
-  //while (timer_elapsed (start) < ticks) 
-  //  thread_yield ();
 }
 
 /* Suspends execution for approximately MS milliseconds. */
@@ -142,7 +140,7 @@ static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
-  thread_tick (); // not sure... yunseong
+  thread_tick ();
 
   if(thread_mlfqs){
     int curr_recent_cpu = thread_current()->recent_cpu;

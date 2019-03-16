@@ -330,6 +330,7 @@ thread_yield (void)
   intr_set_level (old_level);
 }
 
+/* Update wakeup call time by comparing max wakeup time. */
 void
 update_wakeup_call_time (int64_t wakeup_time)
 {
@@ -338,26 +339,28 @@ update_wakeup_call_time (int64_t wakeup_time)
   }
 }
 
+/*  Get wakeup_call_time updated by update_wakeup_call_time func. */
 int64_t
 get_wakeup_call_time ()
 {
   return wakeup_call_time;
 }
 
-/* compare elem and e's priority */
+/*  Compare elem and e's priority. */
 bool
 compare_priority (struct list_elem* a, struct list_elem* b, void* aux)
 {
   return (list_entry(a, struct thread, elem)->priority > list_entry(b, struct thread, elem)->priority);
 }
 
-/* compare elem and e's wakeup_time */
+/*  Compare elem and e's wakeup_time. */
 bool
 compare_wakeup_time (struct list_elem* a, struct list_elem* b, void* aux)
 {
   return (list_entry(a, struct thread, elem)->wakeup_time < list_entry(b, struct thread, elem)->wakeup_time);
 }
 
+/*  make thread sleep.  */
 void
 thread_sleep (void)
 {
@@ -367,9 +370,7 @@ thread_sleep (void)
   ASSERT (!intr_context ());
   old_level = intr_disable ();
 
-  //ASSERT (curr == idle_thread);
   list_insert_ordered(&sleep_list, &curr->elem, compare_wakeup_time, 0);
-  //list_push_back (&sleep_list, &curr->elem);
   thread_block();
   intr_set_level (old_level);
 }
@@ -385,6 +386,7 @@ print_all_time()
   }
 }
 
+/* make thread awake. */
 void
 thread_wakeup (int64_t ticks)
 {
@@ -392,14 +394,14 @@ thread_wakeup (int64_t ticks)
   while(e != list_end(&sleep_list)){
     struct thread* temp = list_entry(e, struct thread, elem);
     if(temp->wakeup_time <= ticks){
-      e = list_remove(&temp->elem); // point next element before remove
+      e = list_remove(&temp->elem); /* point next element before remove. */
       thread_unblock(temp);
     }
     else{
       update_wakeup_call_time(temp->wakeup_time);
       break;
     }
-     // point next element
+     /* point next element. */
   }
   if(list_size(&sleep_list) == 0){
     update_wakeup_call_time(INT64_MAX);
@@ -467,6 +469,8 @@ thread_get_nice (void)
   return thread_current()->nice;
 }
 
+/* calculate th's recent_cpu value by using load_avg. 
+   This function is called at mlfqs state. */
 void
 thread_calculate_recent_cpu(struct thread* th){
   if(th == idle_thread) return;
@@ -476,6 +480,8 @@ thread_calculate_recent_cpu(struct thread* th){
   }
 }
 
+/* Calculates th's priority value by using recent_cpu value.
+   This function is called at mlfqs state. */
 void
 thread_calculate_priority(struct thread* th){
   if(th != idle_thread){
@@ -487,6 +493,8 @@ thread_calculate_priority(struct thread* th){
   }
 }
 
+/* Re-calculates all thread's recent_cpu value.
+   This function is called at mlfqs state. */
 void
 calculate_recent_cpu_by_load_avg(void)
 {
@@ -497,6 +505,8 @@ calculate_recent_cpu_by_load_avg(void)
   }
 }
 
+/* Re-calculates all thread's priority value.
+   This function is called at mlfqs state. */
 void
 calculate_priority_mlfqs(void){
   struct list_elem* e;
@@ -507,7 +517,7 @@ calculate_priority_mlfqs(void){
   if(!list_empty(&ready_list)) list_sort(&ready_list, compare_priority, 0);
 }
 
-/* calculate the load avg. */
+/* Calculate the load avg. */
 void
 thread_calculate_load_avg(void)
 {

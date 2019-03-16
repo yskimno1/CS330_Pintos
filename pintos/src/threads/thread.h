@@ -97,7 +97,7 @@ struct thread
     struct list_elem elem;              /* List element. */
     struct list_elem elem_all;
     int nice;                           /* nice value */
-    int recent_cpu;
+    int recent_cpu;                     /* recent_cpu value */
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
@@ -141,16 +141,19 @@ void thread_sleep(void);
 void thread_wakeup(int64_t);
 void thread_set_wakeup_time (int64_t);
 
-int thread_get_priority (void);
 void thread_set_priority (int);
+int thread_get_priority (void);
+void thread_set_nice (int);
+int thread_get_nice (void);
 
-void thread_calculate_load_avg(void);
+void thread_calculate_recent_cpu(struct thread*);
+void thread_calculate_priority(struct thread*);
+
 void calculate_recent_cpu_by_load_avg(void);
 void calculate_priority_mlfqs(void);
+void thread_calculate_load_avg(void);
 
-int thread_get_nice (void);
-void thread_set_nice (int);
-int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
+int thread_get_recent_cpu (void);
 
 #endif /* threads/thread.h */
