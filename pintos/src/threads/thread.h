@@ -95,6 +95,7 @@ struct thread
     struct list lock_list;
     struct lock* waiting_lock;
     struct list_elem elem;              /* List element. */
+    int nice;                           /* nice value */
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */

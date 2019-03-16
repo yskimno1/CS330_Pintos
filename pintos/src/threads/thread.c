@@ -448,6 +448,7 @@ thread_get_priority (void)
 void
 thread_set_nice (int nice UNUSED) 
 {
+  
   /* Not yet implemented. */
 }
 
@@ -456,7 +457,7 @@ int
 thread_get_nice (void) 
 {
   /* Not yet implemented. */
-  return 0;
+  return thread_current()->nice;
 }
 
 /* Returns 100 times the system load average. */
@@ -563,6 +564,7 @@ init_thread (struct thread *t, const char *name, int priority)
   lock_init(&t->waiting_lock);
   t->first_priority = priority;
   t->donated_count = 0;
+  t->nice = 0;
   t->magic = THREAD_MAGIC;
 }
 
